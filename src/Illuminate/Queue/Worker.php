@@ -3,6 +3,7 @@
 namespace Illuminate\Queue;
 
 use Exception;
+use Illuminate\Database\DetectsLostConnections;
 use Throwable;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -13,6 +14,8 @@ use Illuminate\Contracts\Cache\Repository as CacheContract;
 
 class Worker
 {
+    use DetectsLostConnections;
+
     /**
      * The queue manager instance.
      *
@@ -113,9 +116,21 @@ class Worker
             if ($this->exceptions) {
                 $this->exceptions->report($e);
             }
+
+            // Added by R2O
+            // Stop worker if caused by loss of connection to mysql server
+            if($this->causedByLostConnection($e)){
+                $this->stop();
+            }
         } catch (Throwable $e) {
             if ($this->exceptions) {
                 $this->exceptions->report(new FatalThrowableError($e));
+            }
+
+            // Added by R2O
+            // Stop worker if caused by loss of connection to mysql server
+            if($this->causedByLostConnection($e)){
+                $this->stop();
             }
         }
     }
@@ -159,6 +174,12 @@ class Worker
         } catch (Exception $e) {
             if ($this->exceptions) {
                 $this->exceptions->report($e);
+            }
+
+            // Added by R2O
+            // Stop worker if caused by loss of connection to mysql server
+            if($this->causedByLostConnection($e)){
+                $this->stop();
             }
         }
 
