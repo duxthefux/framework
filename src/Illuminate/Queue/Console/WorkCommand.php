@@ -116,7 +116,7 @@ class WorkCommand extends Command
 
             return $this->worker->daemon(
                 $connection, $queue, $delay, $memory,
-                $this->option('sleep'), $this->option('tries')
+                $this->option('sleep'), $this->option('tries'), (bool) $this->option('once')
             );
         }
 
@@ -189,6 +189,8 @@ class WorkCommand extends Command
             ['sleep', null, InputOption::VALUE_OPTIONAL, 'Number of seconds to sleep when no job is available', 3],
 
             ['tries', null, InputOption::VALUE_OPTIONAL, 'Number of times to attempt a job before logging it failed', 0],
+
+            ['once', null, InputOption::VALUE_NONE, 'Only process one job'],
         ];
     }
 }

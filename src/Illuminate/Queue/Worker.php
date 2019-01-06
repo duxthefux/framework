@@ -79,15 +79,17 @@ class Worker
      * @param  int     $maxTries
      * @return array
      */
-    public function daemon($connectionName, $queue = null, $delay = 0, $memory = 128, $sleep = 3, $maxTries = 0)
+    public function daemon($connectionName, $queue = null, $delay = 0, $memory = 128, $sleep = 3, $maxTries = 0, $once = false)
     {
         $lastRestart = $this->getTimestampOfLastQueueRestart();
 
         while (true) {
             if ($this->daemonShouldRun()) {
                 $this->runNextJobForDaemon(
-                    $connectionName, $queue, $delay, $sleep, $maxTries
+                    $connectionName, $queue, $delay, $sleep, $maxTries, $once
                 );
+
+
             } else {
                 $this->sleep($sleep);
             }
@@ -108,10 +110,17 @@ class Worker
      * @param  int  $maxTries
      * @return void
      */
-    protected function runNextJobForDaemon($connectionName, $queue, $delay, $sleep, $maxTries)
+    protected function runNextJobForDaemon($connectionName, $queue, $delay, $sleep, $maxTries, $once)
     {
         try {
-            $this->pop($connectionName, $queue, $delay, $sleep, $maxTries);
+            $job = $this->pop($connectionName, $queue, $delay, $sleep, $maxTries, $once);
+
+            if($job["job"] && $once){
+                // Added by R2O to only process one job
+                $this->stop();
+
+            }
+
         } catch (Exception $e) {
             if ($this->exceptions) {
                 $this->exceptions->report($e);
